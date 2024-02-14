@@ -1,0 +1,171 @@
+// SPI_server.cpp : This file contains the 'main' function. Program execution begins and ends there.
+//
+
+#include <Windows.h>
+#include <winuser.h>
+#include <opencv2/opencv.hpp>
+#include "mat.hpp"
+
+static std::vector< uint32_t > left;
+static std::vector< uint32_t > width;
+static std::vector< uint32_t > height;
+
+/// <summary>
+/// callback function for getting monitor information
+/// </summary>
+/// <param name="hMonitor"></param>
+/// <param name="hdcMonitor"></param>
+/// <param name="lprcMonitor"></param>
+/// <param name="dwData"></param>
+/// <returns></returns>
+BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData)
+{
+	MONITORINFOEX monitorInfo;
+	monitorInfo.cbSize = sizeof(monitorInfo);
+	GetMonitorInfo(hMonitor, &monitorInfo);
+
+	/// leftmost logical coordinate of monitors
+	left.push_back(monitorInfo.rcMonitor.left);
+
+	DEVMODE devMode;
+	devMode.dmSize = sizeof(DEVMODE);
+	devMode.dmDriverExtra = sizeof(POINTL);
+	devMode.dmFields = DM_POSITION;
+	EnumDisplaySettings(monitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &devMode);
+
+	/// physical resolution of monitors
+	width.push_back(devMode.dmPelsWidth);
+	height.push_back(devMode.dmPelsHeight);
+	
+	return TRUE;
+}
+
+/// <summary>
+/// getting monitor information
+/// </summary>
+void get_monitor_info()
+{
+	EnumDisplayMonitors(NULL, NULL, MonitorEnumProc, 0);
+}
+
+int32_t main(int argc, char *argv[])
+{
+	using namespace std;
+	using namespace cv;
+
+	uint32_t monitorNo	= atoi(argv[1]);
+	uint32_t powerOfTwo	= atoi(argv[2]);
+	uint32_t factor		= atoi(argv[3]);
+	uint32_t grayLevel	= atoi(argv[4]);
+
+	///< order of Walsh matrix
+	const uint32_t N = 1 << powerOfTwo;
+
+	/// getting monitor information
+	get_monitor_info();
+
+	/// monitor number check
+	if (monitorNo >= ::left.size() || monitorNo < 0)
+	{
+		cerr << "Invalid monitor number." << endl;
+		exit(-1);
+	}
+
+	/// size check
+	if (N * factor > width[monitorNo] || N * factor > height[monitorNo])
+	{
+		cerr << "Invalid image size." << endl;
+		exit(-1);
+	}
+
+	/// creating window
+	const std::string window = "window";
+	namedWindow(window, WINDOW_NORMAL);
+	moveWindow(window, ::left[monitorNo], 0);
+	setWindowProperty(window, WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
+	imshow(window, Mat(height[monitorNo], width[monitorNo], CV_8UC1, Scalar(0)));
+	waitKey(1);
+
+	/// creating named pipe
+	HANDLE pipe = CreateNamedPipe(L"\\\\.\\pipe\\SPI", PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_WAIT, 1, 0, 0, 0, NULL);
+
+	if (pipe == INVALID_HANDLE_VALUE)
+	{
+		cerr << "Could not create pipe." << endl;
+		exit(-1);
+	}
+
+	if (!ConnectNamedPipe(pipe, NULL))
+	{
+		CloseHandle(pipe);
+		cerr << "Could not connect pipe." << endl;
+		exit(-1);
+	}
+
+	/// creating Walsh matrix
+	const Mat W = Walsh< float >(powerOfTwo);
+
+	/// creating look up table
+	vector< uint32_t > x(N * N);
+	vector< uint32_t > y(N * N);
+	auto idx = 0;
+	for (auto i = 1u; i <= N; i++)
+	{
+		for (auto j = 1u; j <= i; j++)
+		{
+			x[idx] = j - 1;
+			y[idx] = i - j;
+			idx++;
+		}
+	}
+	for (auto i = N - 1; i > 0; i--)
+	{
+		for (auto j = N - i, k = 1u; j < N; j++, k++)
+		{
+			x[idx] = j;
+			y[idx] = N - k;
+			idx++;
+		}
+	}
+
+	DWORD bytes;
+	int32_t rx;
+	const char tx = 0x06;	///< ACK
+
+	while (1)
+	{
+		if (ReadFile(pipe, &rx, sizeof(rx), &bytes, NULL))
+		{
+			if (rx == -1)
+			{
+				while (!WriteFile(pipe, &tx, 1, NULL, NULL));
+				break;
+			}
+			else
+			{
+				/// creating orthogonal pattern
+				const auto i = x[rx];
+				const auto j = y[rx];
+				const Mat H = (W.col(i) * W.row(j) + 1) / 2;
+
+				/// creating display pattern
+				Mat page;
+				H.convertTo(page, CV_8UC1, grayLevel);
+				resize(page, page, Size(H.cols * factor, H.rows * factor), factor, factor, INTER_NEAREST);
+				Mat	disp(height[monitorNo], width[monitorNo], page.type(), Scalar::all(0));
+				page.copyTo(disp(Rect((disp.cols - page.cols) / 2, (disp.rows - page.rows) / 2, page.cols, page.rows)));
+
+				imshow(window, disp);
+				waitKey(1);
+
+				while (!WriteFile(pipe, &tx, 1, NULL, NULL));
+			}
+		}
+	}
+
+	FlushFileBuffers(pipe);
+	DisconnectNamedPipe(pipe);
+	CloseHandle(pipe);
+
+	return 0;
+}
