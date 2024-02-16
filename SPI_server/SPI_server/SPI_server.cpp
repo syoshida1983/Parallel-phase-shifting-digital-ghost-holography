@@ -3,6 +3,7 @@
 
 #include <Windows.h>
 #include <winuser.h>
+#include <boost/program_options.hpp>
 #include <opencv2/opencv.hpp>
 #include "mat.hpp"
 
@@ -51,12 +52,31 @@ void get_monitor_info()
 int32_t main(int argc, char *argv[])
 {
 	using namespace std;
+	using namespace boost::program_options;
 	using namespace cv;
 
-	uint32_t monitorNo	= atoi(argv[1]);
-	uint32_t powerOfTwo	= atoi(argv[2]);
-	uint32_t factor		= atoi(argv[3]);
-	uint32_t grayLevel	= atoi(argv[4]);
+	options_description desc("options");
+	desc.add_options()
+		("help,h",		"produce help message")
+		("monitor,m",	value< uint32_t >(),	"set monitor number")
+		("power,p",		value< uint32_t >(),	"set pattern size in powers of 2")
+		("factor,f",	value< uint32_t >(),	"set enlargement factor")
+		("gray,g",		value< uint32_t >(),	"set gray level of 1");
+
+	variables_map vm;
+	store(parse_command_line(argc, argv, desc), vm);
+	notify(vm);
+
+	if (vm.count("help") || !vm.count("monitor") || !vm.count("power") || !vm.count("factor") || !vm.count("gray"))
+	{
+		std::cout << desc << endl;
+		return 0;
+	}
+
+	auto monitorNo	= vm["monitor"]	.as< uint32_t >();
+	auto powerOfTwo	= vm["power"]	.as< uint32_t >();
+	auto factor		= vm["factor"]	.as< uint32_t >();
+	auto grayLevel	= vm["gray"]	.as< uint32_t >();
 
 	///< order of Walsh matrix
 	const uint32_t N = 1 << powerOfTwo;
