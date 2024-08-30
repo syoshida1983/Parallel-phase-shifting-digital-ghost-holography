@@ -7,9 +7,9 @@
 #include <opencv2/opencv.hpp>
 #include "mat.hpp"
 
-static std::vector< uint32_t > left;
-static std::vector< uint32_t > width;
-static std::vector< uint32_t > height;
+static std::vector< int32_t > left;
+static std::vector< int32_t > width;
+static std::vector< int32_t > height;
 
 /// <summary>
 /// callback function for getting monitor information
@@ -57,29 +57,31 @@ int32_t main(int argc, char *argv[])
 
 	options_description desc("options");
 	desc.add_options()
-		("help,h",		"produce help message")
-		("monitor,m",	value< uint32_t >(),	"set monitor number")
-		("power,p",		value< uint32_t >(),	"set pattern size in powers of 2")
-		("factor,f",	value< uint32_t >(),	"set enlargement factor")
-		("level,l",		value< uint32_t >(),	"set gray level of white pixel");
+		("help,h",									"produce help message")
+		("monitor,m",		value< uint32_t >(),	"set monitor number")
+		("power,p",			value< uint32_t >(),	"set pattern size in powers of 2")
+		("factor,f",		value< uint32_t >(),	"set enlargement factor")
+		("level,l",			value< uint32_t >(),	"set gray level of white pixel")
+		("background,b",	value< uint32_t >(),	"set gray level of background");
 
 	variables_map vm;
 	store(parse_command_line(argc, argv, desc), vm);
 	notify(vm);
 
-	if (vm.count("help") || !vm.count("monitor") || !vm.count("power") || !vm.count("factor") || !vm.count("level"))
+	if (vm.count("help") || !vm.count("monitor") || !vm.count("power") || !vm.count("factor") || !vm.count("level") || !vm.count("background"))
 	{
 		std::cout << desc << endl;
 		return 0;
 	}
 
-	auto monitorNo	= vm["monitor"]	.as< uint32_t >();
-	auto powerOfTwo	= vm["power"]	.as< uint32_t >();
-	auto factor		= vm["factor"]	.as< uint32_t >();
-	auto grayLevel	= vm["level"]	.as< uint32_t >();
+	int32_t monitorNo	= vm["monitor"]		.as< uint32_t >();
+	int32_t powerOfTwo	= vm["power"]		.as< uint32_t >();
+	int32_t factor		= vm["factor"]		.as< uint32_t >();
+	int32_t grayLevel	= vm["level"]		.as< uint32_t >();
+	int32_t background	= vm["background"]	.as< uint32_t >();
 
 	///< order of Walsh matrix
-	const uint32_t N = 1 << powerOfTwo;
+	const int32_t N = 1 << powerOfTwo;
 
 	/// getting monitor information
 	get_monitor_info();
@@ -126,12 +128,12 @@ int32_t main(int argc, char *argv[])
 	const Mat W = Walsh< float >(powerOfTwo);
 
 	/// creating look up table
-	vector< uint32_t > x(N * N);
-	vector< uint32_t > y(N * N);
+	vector< int32_t > x(N * N);
+	vector< int32_t > y(N * N);
 	auto idx = 0;
-	for (auto i = 1u; i <= N; i++)
+	for (auto i = 1; i <= N; i++)
 	{
-		for (auto j = 1u; j <= i; j++)
+		for (auto j = 1; j <= i; j++)
 		{
 			x[idx] = j - 1;
 			y[idx] = i - j;
@@ -140,7 +142,7 @@ int32_t main(int argc, char *argv[])
 	}
 	for (auto i = N - 1; i > 0; i--)
 	{
-		for (auto j = N - i, k = 1u; j < N; j++, k++)
+		for (auto j = N - i, k = 1; j < N; j++, k++)
 		{
 			x[idx] = j;
 			y[idx] = N - k;
@@ -170,9 +172,9 @@ int32_t main(int argc, char *argv[])
 
 				/// creating display pattern
 				Mat page;
-				H.convertTo(page, CV_8UC1, grayLevel);
+				H.convertTo(page, CV_8UC1, grayLevel - background, background);
 				resize(page, page, Size(H.cols * factor, H.rows * factor), factor, factor, INTER_NEAREST);
-				Mat	disp(height[monitorNo], width[monitorNo], page.type(), Scalar::all(0));
+				Mat	disp(height[monitorNo], width[monitorNo], page.type(), Scalar::all(background));
 				page.copyTo(disp(Rect((disp.cols - page.cols) / 2, (disp.rows - page.rows) / 2, page.cols, page.rows)));
 
 				imshow(window, disp);
