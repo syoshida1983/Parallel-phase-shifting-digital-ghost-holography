@@ -101,11 +101,11 @@ int32_t main(int argc, char *argv[])
 	}
 
 	/// creating window
-	const std::string window = "window";
+	const string window = "window";
 	namedWindow(window, WINDOW_NORMAL);
 	moveWindow(window, ::left[monitorNo], 0);
 	setWindowProperty(window, WND_PROP_FULLSCREEN, WINDOW_FULLSCREEN);
-	imshow(window, Mat(height[monitorNo], width[monitorNo], CV_8UC1, Scalar(0)));
+	imshow(window, Mat(height[monitorNo], width[monitorNo], CV_8UC1, Scalar(background)));
 	waitKey(1);
 
 	/// creating named pipe
@@ -128,15 +128,15 @@ int32_t main(int argc, char *argv[])
 	const Mat W = Walsh< float >(powerOfTwo);
 
 	/// creating look up table
-	vector< int32_t > x(N * N);
-	vector< int32_t > y(N * N);
+	vector< int32_t > cols(N * N);
+	vector< int32_t > rows(N * N);
 	auto idx = 0;
 	for (auto i = 1; i <= N; i++)
 	{
 		for (auto j = 1; j <= i; j++)
 		{
-			x[idx] = j - 1;
-			y[idx] = i - j;
+			cols[idx] = j - 1;
+			rows[idx] = i - j;
 			idx++;
 		}
 	}
@@ -144,8 +144,8 @@ int32_t main(int argc, char *argv[])
 	{
 		for (auto j = N - i, k = 1; j < N; j++, k++)
 		{
-			x[idx] = j;
-			y[idx] = N - k;
+			cols[idx] = j;
+			rows[idx] = N - k;
 			idx++;
 		}
 	}
@@ -166,8 +166,8 @@ int32_t main(int argc, char *argv[])
 			else
 			{
 				/// creating orthogonal pattern
-				const auto i = x[rx];
-				const auto j = y[rx];
+				const auto i = cols[rx];
+				const auto j = rows[rx];
 				const Mat H = (W.col(i) * W.row(j) + 1) / 2;
 
 				/// creating display pattern
