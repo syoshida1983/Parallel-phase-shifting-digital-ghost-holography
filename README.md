@@ -24,6 +24,9 @@ options:
 ```
 
 By sending an integer value of type `int32_t` to the named pipe `\\.\pipe\SPI`, SPI_server displays the corresponding spatial orthogonal pattern on the specified monitor.
+The integer values $`0, 1, 2, 3,\dots`$ correspond to the following patterns: $`(i, j) = (1, 1), (2, 1), (1, 2), (3, 1), (2, 2), (1, 3),\dots`$
+
+<img src="https://github.com/syoshida1983/Parallel-phase-shifting-digital-ghost-holography/blob/images/orthogonal.jpg" width="50%" />
 
 ## SPI_client
 
