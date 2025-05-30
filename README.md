@@ -24,13 +24,20 @@ options:
 ```
 
 By sending an integer value of type `int32_t` to the named pipe `\\.\pipe\SPI`, SPI_server displays the corresponding spatial orthogonal pattern on the specified monitor.
-The integer values $`0, 1, 2, 3,\dots`$ correspond to the following patterns: $`(i, j) = (1, 1), (2, 1), (1, 2), (3, 1), (2, 2), (1, 3),\dots`$
+The integer values $`0, 1, 2, 3,\dots`$ correspond to the following patterns: $`(i, j) = (1, 1), (2, 1), (1, 2), (3, 1), (2, 2), (1, 3),\dots`$.
+If -1 is received, the program will terminate. For spatial orthogonal patterns, please take a look at the [paper](https://arxiv.org/abs/2505.16454).
 
 <img src="https://github.com/syoshida1983/Parallel-phase-shifting-digital-ghost-holography/blob/images/orthogonal.jpg" width="50%" />
 
 ## SPI_client
+SPI_client provides functions as a DLL that sends data to SPI_server using a named pipe.
+The functions provided by `SPI_client.dll` are as follows.
+- `int32_t open()` Creates the named pipe `\\.\pipe\SPI`. Returns -1 if creation fails, otherwise returns 0.
+- `void close()` Closes the named pipe.
+- `void write(const int32_t)` Sends an integer value of type `int32_t` to the named pipe.
 
 ## SPI.vi
+SPI.vi is a LabVIEW VI file that displays spatial orthogonal patterns using SPI_server and SPI_client.
 
 ## Citation
 ```BibTeX
