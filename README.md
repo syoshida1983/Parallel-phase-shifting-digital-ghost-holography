@@ -1,4 +1,5 @@
 # Parallel-phase-shifting-digital-ghost-holography
+[![DOI](https://img.shields.io/badge/DOI-10.48550/arXiv.2505.16454-blue.svg)](https://doi.org/10.48550/arXiv.2505.16454)
 
 ## SPI_server
 
@@ -38,6 +39,18 @@ The functions provided by `SPI_client.dll` are as follows.
 
 ## SPI.vi
 SPI.vi is a LabVIEW VI file that displays spatial orthogonal patterns using SPI_server and SPI_client.
+
+## PPSDGH.jl
+PPSDGH.jl is Julia code that reconstructs wavefronts from measurement results.
+The parameters can be set in lines 62 – 65.
+CSV, DataFrames, Statistics, Images, and Hadamard packages are required to execute the code.
+To install these packages, open the Julia REPL and run
+
+```julia
+julia> ]add CSV DataFrames Statistics Images Hadamard
+```
+
+As an example, we have attached the actual measurement results in measurements.csv.
 
 ## Citation
 ```BibTeX
