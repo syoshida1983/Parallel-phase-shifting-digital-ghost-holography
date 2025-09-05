@@ -1,4 +1,5 @@
 # Parallel-phase-shifting-digital-ghost-holography
+[![DOI](https://img.shields.io/badge/DOI-10.1016/J.OPTLASENG.2025.109290-blue.svg)](https://doi.org/10.1016/J.OPTLASENG.2025.109290)
 [![DOI](https://img.shields.io/badge/DOI-10.48550/arXiv.2505.16454-blue.svg)](https://doi.org/10.48550/arXiv.2505.16454)
 
 ## SPI_server
@@ -54,10 +55,16 @@ As an example, we have attached the actual measurement results in measurements.c
 
 ## Citation
 ```BibTeX
-@misc{2505.16454,
-	author	= {Shuhei Yoshida},
-	title	= {Parallel Phase-shifting Digital Ghost Holography},
-	year	= {2025},
-	eprint	= {arXiv:2505.16454},
+@article{Yoshida2025,
+	author		= {Shuhei Yoshida},
+	doi		= {10.1016/J.OPTLASENG.2025.109290},
+	journal		= {Optics and Lasers in Engineering},
+	month		= {12},
+	pages		= {109290},
+	publisher	= {Elsevier},
+	title		= {Parallel phase-shifting digital ghost holography},
+	volume		= {195},
+	url		= {https://www.sciencedirect.com/science/article/abs/pii/S0143816625004750},
+	year		= {2025},
 }
 ```
